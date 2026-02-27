@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital Growth Partners — Instant Business Intelligence</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- jsPDF + AutoTable -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+
+  <!-- App Styles -->
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+  <!-- Background Canvas -->
+  <canvas id="bg-canvas"></canvas>
+
+  <!-- ==================== PAGE 1: INPUT ==================== -->
+  <div class="page active" id="input-page">
+    <div class="input-page">
+
+      <!-- Settings Button (top-right) -->
+      <button class="settings-btn" onclick="openSettings()" title="API Configuration">
+        <i class="fas fa-cog"></i>
+      </button>
+
+      <!-- Brand Lockup -->
+      <div class="brand-lockup">
+        <div class="brand-icon"><i class="fas fa-chart-line"></i></div>
+        <h2>Digital Growth Partners</h2>
+      </div>
+
+      <!-- Hero Headline -->
+      <div class="hero-headline">
+        <h1>Instant Business<br>Intelligence</h1>
+        <p>Paste a phone number or website URL. We'll do the rest.</p>
+      </div>
+
+      <!-- Input Area -->
+      <div class="input-area">
+        <div class="input-wrapper">
+          <i class="fas fa-search search-icon"></i>
+          <input type="text" id="business-input" placeholder="Enter business phone or website..." autocomplete="off" spellcheck="false">
+        </div>
+
+        <div class="input-helpers">
+          <span>&#x1F4DE; Business Phone Number</span>
+          <span>&#x1F310; Website URL</span>
+        </div>
+
+        <button class="btn-analyze" id="analyze-btn">
+          <i class="fas fa-bolt"></i>&nbsp; Analyze Business
+        </button>
+
+        <div class="trust-badges">
+          AI-Powered &nbsp;&middot;&nbsp; 30-Second Scan &nbsp;&middot;&nbsp; Competitive Analysis
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="input-footer">Powered by Digital Growth Partners</div>
+    </div>
+  </div>
+
+  <!-- ==================== LOADING PAGE ==================== -->
+  <div class="page" id="loading-page">
+    <div class="loading-page">
+      <div class="loading-content">
+        <div class="loading-business-name" id="loading-biz-name">Searching...</div>
+        <div class="loading-business-detail" id="loading-biz-detail"></div>
+
+        <div class="progress-bar-container">
+          <div class="progress-bar" id="progress-bar"></div>
+        </div>
+
+        <ul class="loading-steps" id="loading-steps">
+          <li>
+            <span class="step-icon"><i class="fas fa-spinner"></i></span>
+            Analyzing website performance...
+          </li>
+          <li>
+            <span class="step-icon"><i class="fas fa-spinner"></i></span>
+            Looking up business information...
+          </li>
+          <li>
+            <span class="step-icon"><i class="fas fa-spinner"></i></span>
+            Scanning Google reviews...
+          </li>
+          <li>
+            <span class="step-icon"><i class="fas fa-spinner"></i></span>
+            Finding local competitors...
+          </li>
+          <li>
+            <span class="step-icon"><i class="fas fa-spinner"></i></span>
+            Calculating scores...
+          </li>
+          <li>
+            <span class="step-icon"><i class="fas fa-spinner"></i></span>
+            Generating call script...
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== RESULTS PAGE ==================== -->
+  <div class="page" id="results-page">
+    <div class="results-page">
+      <!-- Action Bar -->
+      <div class="action-bar" id="action-bar"></div>
+
+      <!-- Two-Column Layout -->
+      <div class="results-grid">
+        <!-- LEFT: Call Script -->
+        <div class="call-script-panel" id="call-script-panel"></div>
+
+        <!-- RIGHT: Audit Scorecard -->
+        <div class="audit-panel" id="audit-panel"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== EMAIL MODAL ==================== -->
+  <div class="modal-overlay" id="email-modal">
+    <div class="modal-box">
+      <h3>Email Report to Prospect</h3>
+      <p>Enter the prospect's email address. We'll track this send for your records.</p>
+      <input type="email" id="prospect-email" placeholder="prospect@email.com">
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeEmailModal()">Cancel</button>
+        <button class="btn btn-gold" onclick="sendEmail()"><i class="fas fa-paper-plane"></i> Send Report</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SETTINGS MODAL ==================== -->
+  <div class="modal-overlay" id="settings-modal">
+    <div class="modal-box settings-modal-box">
+      <h3><i class="fas fa-key"></i> API Configuration</h3>
+      <p>Enter your Google Cloud API key to enable live business data.</p>
+      <div class="api-status disconnected" id="api-status">
+        <div class="api-status-disconnected">
+          <i class="fas fa-exclamation-circle"></i>
+          <span>Not configured — Demo mode active</span>
+        </div>
+      </div>
+      <input type="text" id="api-key-input" placeholder="Enter Google Cloud API Key..." autocomplete="off" spellcheck="false">
+      <div class="settings-note">
+        <p><strong>Free tier:</strong> PageSpeed works without a key (25,000 tests/day)</p>
+        <p><strong>With key:</strong> Business lookup, reviews, competitors ($200/mo free credit from Google)</p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeSettings()">Cancel</button>
+        <button class="btn btn-gold" onclick="saveApiKey()"><i class="fas fa-check"></i> Save & Test</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== TOAST ==================== -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Scripts -->
+  <script src="./scoring.js"></script>
+  <script src="./app.js"></script>
+  <script src="./pdf-generator.js"></script>
+
+</body>
+</html>

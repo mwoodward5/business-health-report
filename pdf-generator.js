@@ -1,10 +1,11 @@
 /* ============================================
-   PDF GENERATOR — 6-Page Report using jsPDF
+   PDF GENERATOR — Rocket Search 6-Page Report
    Supports Live Data + Demo Mode indicators
    ============================================ */
 
 window.PDFGenerator = {
   generate: function (business, scores, findings, competitors, dataMode) {
+   try {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('p', 'mm', 'a4');
     const W = 210, H = 297;
@@ -43,7 +44,7 @@ window.PDFGenerator = {
     function addFooter(pageNum) {
       doc.setFontSize(8);
       doc.setTextColor(...gray);
-      doc.text(`Digital Growth Partners | Confidential`, margin, H - 10);
+      doc.text(`Rocket Search | Confidential`, margin, H - 10);
       doc.text(`Page ${pageNum} of 6`, W - margin, H - 10, { align: 'right' });
 
       // Data mode indicator
@@ -73,7 +74,7 @@ window.PDFGenerator = {
     doc.setFontSize(12);
     doc.setTextColor(...gold);
     doc.setFont('helvetica', 'bold');
-    doc.text('DIGITAL GROWTH PARTNERS', W / 2, 40, { align: 'center' });
+    doc.text('ROCKET SEARCH', W / 2, 40, { align: 'center' });
 
     // Title
     doc.setFontSize(32);
@@ -129,9 +130,17 @@ window.PDFGenerator = {
     doc.setFont('helvetica', 'normal');
     doc.text(`Report Generated: ${today}`, W / 2, H - 30, { align: 'center' });
 
+    // Prepared for subtitle in gold
+    doc.setFontSize(14);
+    doc.setTextColor(...gold);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Prepared for ' + (business.ownerName || ''), W / 2, 113, { align: 'center' });
+
     // Confidential
     doc.setFontSize(8);
-    doc.text('Confidential — Prepared exclusively for ' + business.ownerName, W / 2, H - 20, { align: 'center' });
+    doc.setTextColor(...gray);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Confidential — Prepared exclusively for ' + (business.ownerName || ''), W / 2, H - 20, { align: 'center' });
 
     addFooter(1);
 
@@ -162,7 +171,7 @@ window.PDFGenerator = {
 
     // Key Metrics Box
     doc.setFillColor(...navyMid);
-    doc.roundedRect(margin, y, contentW, 50, 4, 4, 'F');
+    doc.roundedRect(margin, y, contentW, 65, 4, 4, 'F');
 
     const metricsData = [
       { label: 'Overall Score', value: `${overall}/100` },
@@ -177,13 +186,25 @@ window.PDFGenerator = {
       doc.setFontSize(18);
       doc.setTextColor(...gold);
       doc.setFont('helvetica', 'bold');
-      doc.text(m.value, mx, y + 22, { align: 'center' });
+      doc.text(m.value, mx, y + 18, { align: 'center' });
       doc.setFontSize(8);
       doc.setTextColor(...gray);
       doc.setFont('helvetica', 'normal');
-      doc.text(m.label, mx, y + 30, { align: 'center' });
+      doc.text(m.label, mx, y + 26, { align: 'center' });
     });
-    y += 60;
+
+    // "What This Means" explanation
+    const targetRank = competitors.find(c => c.isTarget)?.rank || '?';
+    const critCount = findings.filter(f => f.priority === 'critical').length;
+    let lostPct = overall < 40 ? '60-80' : overall < 55 ? '40-60' : overall < 70 ? '25-40' : '10-25';
+    const whatThisMeansText = `Your score of ${overall}/100 means your business is losing an estimated ${lostPct}% of potential online customers to competitors with stronger digital presences. With ${critCount} critical issue${critCount !== 1 ? 's' : ''} and a market position of #${targetRank} out of ${competitors.length}, immediate action is needed to stop the revenue leak.`;
+    doc.setFontSize(8);
+    doc.setTextColor(...white);
+    doc.setFont('helvetica', 'normal');
+    const whatLines = doc.splitTextToSize(whatThisMeansText, contentW - 16);
+    doc.text(whatLines, margin + 8, y + 36);
+
+    y += 75;
 
     // Key findings summary
     doc.setFontSize(14);
@@ -206,7 +227,7 @@ window.PDFGenerator = {
       doc.setTextColor(...gray);
       doc.setFont('helvetica', 'normal');
       const impLines = doc.splitTextToSize(f.impact, contentW - 10);
-      doc.text(impLines[0], margin + 7, y + 9);
+      doc.text(impLines[0] || '', margin + 7, y + 9);
       y += 16;
     });
 
@@ -267,7 +288,7 @@ window.PDFGenerator = {
         doc.setTextColor(...white);
         doc.setFont('helvetica', 'normal');
         const tLines = doc.splitTextToSize(f.title + ' — ' + f.stat, contentW - 20);
-        doc.text(tLines[0], margin + 17, fy + 3);
+        doc.text(tLines[0] || '', margin + 17, fy + 3);
         fy += 9;
       });
 
@@ -328,7 +349,7 @@ window.PDFGenerator = {
         doc.setTextColor(...white);
         doc.setFont('helvetica', 'normal');
         const tLines = doc.splitTextToSize(f.title + ' — ' + f.stat, contentW - 20);
-        doc.text(tLines[0], margin + 17, fy + 3);
+        doc.text(tLines[0] || '', margin + 17, fy + 3);
         fy += 9;
       });
 
@@ -339,7 +360,7 @@ window.PDFGenerator = {
     y += 10;
     doc.setFontSize(8);
     doc.setTextColor(...gray);
-    doc.setFont('helvetica', 'italic');
+    doc.setFont('helvetica', 'normal');
     if (mode === 'live') {
       doc.text('* Categories marked with an asterisk use live data from Google APIs.', margin, y);
       doc.text('Unmarked categories use estimated data based on industry benchmarks.', margin, y + 5);
@@ -379,9 +400,9 @@ window.PDFGenerator = {
       body: competitors.map(c => [
         `#${c.rank}`,
         c.name + (c.isTarget ? ' (You)' : ''),
-        c.score,
+        String(c.score),
         c.grade,
-        c.reviews,
+        String(c.reviews),
       ]),
       theme: 'plain',
       styles: {
@@ -425,7 +446,7 @@ window.PDFGenerator = {
     competitors.forEach(c => {
       const cColor = c.isTarget ? gold : getColor(c.score);
       doc.setFontSize(8);
-      doc.setTextColor(c.isTarget ? gold : gray);
+      if (c.isTarget) { doc.setTextColor(...gold); } else { doc.setTextColor(...gray); }
       doc.setFont('helvetica', c.isTarget ? 'bold' : 'normal');
       doc.text(c.name.substring(0, 30), margin, y + 3);
 
@@ -486,7 +507,7 @@ window.PDFGenerator = {
         doc.setTextColor(...gray);
         doc.setFont('helvetica', 'normal');
         const recLine = doc.splitTextToSize(item.stat, contentW - 12);
-        doc.text(recLine[0], margin + 5, y + 13);
+        doc.text(recLine[0] || '', margin + 5, y + 13);
         y += 22;
       });
       y += 5;
@@ -494,27 +515,40 @@ window.PDFGenerator = {
 
     // CTA Box
     y = Math.max(y + 10, 200);
+    // Ensure CTA box fits on the page
+    if (y + 85 > H - 15) y = H - 100;
     doc.setFillColor(20, 35, 60);
-    doc.roundedRect(margin, y, contentW, 55, 6, 6, 'F');
+    doc.roundedRect(margin, y, contentW, 80, 6, 6, 'F');
     doc.setDrawColor(...gold);
     doc.setLineWidth(1);
-    doc.roundedRect(margin, y, contentW, 55, 6, 6, 'S');
+    doc.roundedRect(margin, y, contentW, 80, 6, 6, 'S');
 
     doc.setFontSize(16);
     doc.setTextColor(...gold);
     doc.setFont('helvetica', 'bold');
-    doc.text('Ready to Improve Your Digital Presence?', W / 2, y + 16, { align: 'center' });
+    doc.text('Every Day Without Action Costs You Customers', W / 2, y + 14, { align: 'center' });
 
     doc.setFontSize(10);
     doc.setTextColor(...white);
     doc.setFont('helvetica', 'normal');
-    doc.text('Our team specializes in helping local businesses like yours dominate online.', W / 2, y + 28, { align: 'center' });
-    doc.text('Schedule a free strategy call to discuss your custom action plan.', W / 2, y + 36, { align: 'center' });
+    const ctaLine1 = `Right now, competitors are capturing the customers who can't find you online.`;
+    const ctaLine2 = `Your ${findings.filter(f => f.priority === 'critical').length} critical issues are actively driving revenue to other businesses.`;
+    const ctaLine3 = `The longer you wait, the harder it becomes to close the gap.`;
+    doc.text(ctaLine1, W / 2, y + 26, { align: 'center' });
+    doc.text(ctaLine2, W / 2, y + 34, { align: 'center' });
+    doc.text(ctaLine3, W / 2, y + 42, { align: 'center' });
 
-    doc.setFontSize(12);
+    doc.setFontSize(11);
     doc.setTextColor(...gold);
     doc.setFont('helvetica', 'bold');
-    doc.text('Digital Growth Partners', W / 2, y + 48, { align: 'center' });
+    doc.text('Schedule your free strategy call today.', W / 2, y + 54, { align: 'center' });
+
+    doc.setFontSize(12);
+    doc.text('Rocket Search | Mark Woodward | (714) 609-6275', W / 2, y + 64, { align: 'center' });
+    doc.setFontSize(9);
+    doc.setTextColor(...gray);
+    doc.setFont('helvetica', 'normal');
+    doc.text('woodwardsoftware@gmail.com | Mission Viejo, CA', W / 2, y + 71, { align: 'center' });
 
     addFooter(6);
 
@@ -525,9 +559,22 @@ window.PDFGenerator = {
     const a = document.createElement('a');
     a.href = url;
     a.download = filename;
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    // Don't revoke immediately - give the browser time
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+    // Fallback: if the download doesn't trigger within 2 seconds, open in new tab
+    setTimeout(() => {
+      window.open(url, '_blank');
+    }, 2000);
 
     if (window.showToast) showToast('PDF report downloaded!', 'success');
+
+   } catch(err) {
+    console.error('PDF generation error:', err);
+    if (window.showToast) showToast('PDF generation failed: ' + err.message, 'error');
+   }
   },
 };

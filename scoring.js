@@ -327,7 +327,10 @@ function generateScores(business, apiData) {
   const rng = mulberry32(business.seed + 42);
   const hasPageSpeed = apiData && apiData.pagespeed && apiData.pagespeed.success;
   const hasPlaces = business.dataMode === 'live';
-  const biasedScore = () => Math.floor(45 + rng() * 40);
+  // For demo mode, use strategically bad scores that create sales urgency
+  const biasedScore = hasPageSpeed || hasPlaces
+    ? () => Math.floor(45 + rng() * 40)
+    : () => Math.floor(30 + rng() * 35);
 
   // ---- WEBSITE PERFORMANCE ----
   let websiteScore, websiteMetrics;
@@ -357,12 +360,12 @@ function generateScores(business, apiData) {
     };
   } else {
     websiteScore = biasedScore();
-    const loadTime = (3.5 + rng() * 6).toFixed(1);
-    const mobileScore = Math.floor(25 + rng() * 50);
+    const loadTime = (6.5 + rng() * 3).toFixed(1);
+    const mobileScore = Math.floor(25 + rng() * 25);
     websiteMetrics = {
       loadTime, mobileScore, mobileFriendly: mobileScore > 50,
-      missingSSL: rng() > 0.5,
-      bounceRate: Math.floor(55 + rng() * 35),
+      missingSSL: rng() > 0.3,
+      bounceRate: Math.floor(65 + rng() * 25),
       pagesPerSession: (1.1 + rng() * 1.5).toFixed(1),
       missingAlt: Math.floor(5 + rng() * 20),
       brokenLinks: Math.floor(rng() * 8),
@@ -439,8 +442,8 @@ function generateScores(business, apiData) {
     };
   } else {
     reputationScore = biasedScore();
-    const reviewCount = Math.floor(3 + rng() * 25);
-    const avgRating = (2.5 + rng() * 2.5).toFixed(1);
+    const reviewCount = Math.floor(3 + rng() * 12);
+    const avgRating = (3.0 + rng() * 1.0).toFixed(1);
     reputationMetrics = {
       reviewCount, avgRating,
       competitorReviews: Math.floor(40 + rng() * 160),
@@ -452,7 +455,7 @@ function generateScores(business, apiData) {
   // ---- SOCIAL MEDIA (always simulated) ----
   const socialScore = biasedScore();
   const socialMetrics = {
-    socialFollowers: Math.floor(50 + rng() * 400),
+    socialFollowers: Math.floor(30 + rng() * 170),
     lastPost: Math.floor(14 + rng() * 90),
     _real: false,
   };
@@ -666,10 +669,10 @@ function generateCompetitorsDemo(business, overallScore) {
     used.add(name);
 
     let score;
-    if (i === 0) score = Math.min(95, overallScore + Math.floor(15 + rng() * 15));
-    else if (i === 1) score = Math.min(92, overallScore + Math.floor(5 + rng() * 12));
-    else if (i === 2) score = overallScore + Math.floor(-5 + rng() * 10);
-    else score = Math.max(30, overallScore - Math.floor(5 + rng() * 15));
+    if (i === 0) score = Math.min(97, overallScore + Math.floor(25 + rng() * 15));
+    else if (i === 1) score = Math.min(93, overallScore + Math.floor(15 + rng() * 12));
+    else if (i === 2) score = overallScore + Math.floor(5 + rng() * 10);
+    else score = Math.max(25, overallScore - Math.floor(3 + rng() * 10));
 
     const reviews = Math.floor(20 + rng() * 180);
     const rating = (3.5 + rng() * 1.5).toFixed(1);
@@ -690,6 +693,17 @@ function generateCompetitorsDemo(business, overallScore) {
   competitors.sort((a, b) => b.score - a.score);
   competitors.forEach((c, i) => { c.rank = i + 1; });
 
+  // Ensure target business always ranks #4 or #5 in demo mode
+  const targetIdx = competitors.findIndex(c => c.isTarget);
+  if (targetIdx >= 0 && targetIdx < 3) {
+    // Target is too high — swap with competitor at position 3 or 4
+    const swapIdx = Math.min(3, competitors.length - 1);
+    if (swapIdx !== targetIdx) {
+      [competitors[targetIdx], competitors[swapIdx]] = [competitors[swapIdx], competitors[targetIdx]];
+      competitors.forEach((c, i) => { c.rank = i + 1; });
+    }
+  }
+
   return competitors;
 }
 
@@ -702,7 +716,7 @@ function generateCallScript(business, scores, findings, competitors) {
 
   const bestCallTime = business.seed % 2 === 0 ? 'Morning (9-11 AM)' : 'Afternoon (1-3 PM)';
 
-  const opening = `Hi ${business.ownerFirst}, this is [YOUR NAME] with Digital Growth Partners. I was doing some research on ${business.industry.toLowerCase()} businesses in ${business.city} and came across ${business.businessName}. Do you have a quick minute?`;
+  const opening = `Hi ${business.ownerFirst}, this is Mark with Rocket Search. I was doing some research on ${business.industry.toLowerCase()} businesses in ${business.city} and came across ${business.businessName}. Do you have a quick minute?`;
 
   let hook = '';
   if (hookFinding) {

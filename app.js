@@ -1,5 +1,5 @@
 /* ============================================
-   APP.JS — Main Application Logic
+   APP.JS — Rocket Search Application Logic
    Dual-mode: Real Google APIs + Demo fallback
    ============================================ */
 
@@ -917,9 +917,14 @@ function formatPhone(phone) {
 
 // ---- PDF Download (delegated to pdf-generator.js) ----
 function downloadPDF() {
-  if (window.PDFGenerator) {
-    window.PDFGenerator.generate(currentBusiness, currentScores, currentFindings, currentCompetitors, dataMode);
-  } else {
-    showToast('PDF generator loading, please try again...', 'error');
+  try {
+    if (window.PDFGenerator) {
+      window.PDFGenerator.generate(currentBusiness, currentScores, currentFindings, currentCompetitors, dataMode);
+    } else {
+      showToast('PDF generator loading, please try again...', 'error');
+    }
+  } catch(err) {
+    console.error('PDF download error:', err);
+    showToast('PDF generation failed: ' + err.message, 'error');
   }
 }
